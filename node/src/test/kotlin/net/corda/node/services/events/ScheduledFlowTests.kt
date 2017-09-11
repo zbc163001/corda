@@ -3,10 +3,10 @@ package net.corda.node.services.events
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.*
-import net.corda.core.crypto.containsAny
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
+import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.chooseIdentity
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.node.services.VaultQueryService
@@ -30,7 +30,6 @@ import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.security.PublicKey
 import java.time.Instant
 import kotlin.test.assertEquals
 
@@ -50,6 +49,9 @@ class ScheduledFlowTests {
                               val processed: Boolean = false,
                               override val linearId: UniqueIdentifier = UniqueIdentifier(),
                               override val contract: Contract = DummyContract()) : SchedulableState, LinearState {
+        constructor(creationTime: Instant,
+                    source: PartyAndCertificate,
+                    destination: Party) : this(creationTime, source.party, destination)
         override fun nextScheduledActivity(thisStateRef: StateRef, flowLogicRefFactory: FlowLogicRefFactory): ScheduledActivity? {
             if (!processed) {
                 val logicRef = flowLogicRefFactory.create(ScheduledFlow::class.java, thisStateRef)
@@ -66,14 +68,14 @@ class ScheduledFlowTests {
         @Suspendable
         override fun call() {
             val scheduledState = ScheduledState(serviceHub.clock.instant(),
-                    serviceHub.myInfo.chooseIdentity(), destination)
+                    me, destination)
 
             val notary = serviceHub.networkMapCache.getAnyNotary()
             val builder = TransactionBuilder(notary)
                     .addOutputState(scheduledState)
                     .addCommand(dummyCommand(serviceHub.chooseIdentity().owningKey))
             val tx = serviceHub.signInitialTransaction(builder)
-            subFlow(FinalityFlow(tx, setOf(serviceHub.myInfo.chooseIdentity())))
+            subFlow(FinalityFlow(tx, setOf(me.party)))
         }
     }
 
@@ -84,7 +86,7 @@ class ScheduledFlowTests {
             val state = serviceHub.toStateAndRef<ScheduledState>(stateRef)
             val scheduledState = state.state.data
             // Only run flow over states originating on this node
-            if (scheduledState.source != serviceHub.myInfo.chooseIdentity()) {
+            if (scheduledState.source != me.party) {
                 return
             }
             require(!scheduledState.processed) { "State should not have been previously processed" }
