@@ -122,7 +122,11 @@ class PersistentIdentityService(identities: Iterable<PartyAndCertificate> = empt
     @Throws(CertificateExpiredException::class, CertificateNotYetValidException::class, InvalidAlgorithmParameterException::class)
     override fun verifyAndRegisterIdentity(identity: PartyAndCertificate): PartyAndCertificate? {
         // Validate the chain first, before we do anything clever with it
-        identity.verify(trustAnchor)
+        try {
+            identity.verify(trustAnchor)
+        } catch(ex: CertPathValidatorException) {
+            throw IllegalArgumentException("Certificate path for identity ${identity.name} is invalid: ${ex.message}")
+        }
 
         log.info("Registering identity $identity")
         val key = mapToKey(identity)

@@ -34,6 +34,7 @@ class PartyAndCertificate(val certPath: CertPath) {
     override fun toString(): String = party.toString()
 
     /** Verify the certificate path is valid. */
+    @Throws(CertPathValidatorException::class)
     fun verify(trustAnchor: TrustAnchor): PKIXCertPathValidatorResult {
         val parameters = PKIXParameters(setOf(trustAnchor)).apply { isRevocationEnabled = false }
         val validator = CertPathValidator.getInstance("PKIX")

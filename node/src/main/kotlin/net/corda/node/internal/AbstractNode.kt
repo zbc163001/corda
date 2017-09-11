@@ -78,6 +78,7 @@ import java.nio.file.Paths
 import java.security.KeyPair
 import java.security.KeyStoreException
 import java.security.cert.CertificateFactory
+import java.security.cert.TrustAnchor
 import java.security.cert.X509Certificate
 import java.sql.Connection
 import java.time.Clock
@@ -743,7 +744,11 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
             throw ConfigurationException("The name for $id doesn't match what's in the key store: $name vs $subject")
 
         partyKeys += keys
-        return PartyAndCertificate(CertificateFactory.getInstance("X509").generateCertPath(certificates))
+        val candidate = PartyAndCertificate(CertificateFactory.getInstance("X509").generateCertPath(certificates))
+        val trustStore = KeyStoreWrapper(configuration.trustStoreFile, configuration.trustStorePassword)
+        val trustRoot = trustStore.getX509Certificate(X509Utilities.CORDA_ROOT_CA).cert
+        candidate.verify(TrustAnchor(trustRoot, null))
+        return candidate
     }
 
     private fun migrateKeysFromFile(keyStore: KeyStoreWrapper, serviceName: X500Name,
