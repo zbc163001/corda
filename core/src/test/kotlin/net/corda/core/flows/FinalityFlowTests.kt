@@ -7,6 +7,9 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
 import net.corda.finance.GBP
 import net.corda.finance.contracts.asset.Cash
+import net.corda.testing.ALICE
+import net.corda.testing.BOB
+import net.corda.testing.DUMMY_NOTARY
 import net.corda.testing.chooseIdentity
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockServices
@@ -25,10 +28,10 @@ class FinalityFlowTests {
     @Before
     fun setup() {
         mockNet = MockNetwork()
-        val nodes = mockNet.createSomeNodes(2)
-        nodeA = nodes.partyNodes[0]
-        nodeB = nodes.partyNodes[1]
-        notary = nodes.notaryNode.info.notaryIdentity
+        val notaryNode = mockNet.createNotaryNode(null, DUMMY_NOTARY.name)
+        nodeA = mockNet.createPartyNode(notaryNode.network.myAddress, ALICE.name)
+        nodeB = mockNet.createPartyNode(notaryNode.network.myAddress, BOB.name)
+        notary = notaryNode.info.notaryIdentity
         mockNet.runNetwork()
         nodeA.ensureRegistered()
     }
