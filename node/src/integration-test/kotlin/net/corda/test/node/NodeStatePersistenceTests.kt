@@ -28,6 +28,7 @@ import net.corda.node.services.FlowPermissions
 import net.corda.node.services.transactions.SimpleNotaryService
 import net.corda.nodeapi.User
 import net.corda.testing.DUMMY_NOTARY
+import net.corda.testing.chooseIdentity
 import net.corda.testing.driver.driver
 import org.junit.Test
 import java.lang.management.ManagementFactory
@@ -46,7 +47,7 @@ class NodeStatePersistenceTests {
 
             startNode(providedName = DUMMY_NOTARY.name, advertisedServices = setOf(ServiceInfo(SimpleNotaryService.type))).getOrThrow()
             var nodeHandle = startNode(rpcUsers = listOf(user)).getOrThrow()
-            val nodeName = nodeHandle.nodeInfo.legalIdentity.name
+            val nodeName = nodeHandle.nodeInfo.chooseIdentity().name
             nodeHandle.rpcClientToNode().start(user.username, user.password).use {
                 it.proxy.startFlow(::SendMessageFlow, message).returnValue.getOrThrow()
             }
@@ -144,7 +145,7 @@ class SendMessageFlow(private val message: Message) : FlowLogic<SignedTransactio
 
         progressTracker.currentStep = GENERATING_TRANSACTION
 
-        val messageState = MessageState(message = message, by = serviceHub.myInfo.legalIdentity)
+        val messageState = MessageState(message = message, by = serviceHub.myInfo.chooseIdentity())
         val txCommand = Command(MessageContract.Commands.Send(), messageState.participants.map { it.owningKey })
         val txBuilder = TransactionBuilder(notary).withItems(messageState, txCommand)
 

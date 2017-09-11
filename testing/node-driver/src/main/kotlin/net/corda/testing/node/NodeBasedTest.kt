@@ -19,6 +19,7 @@ import net.corda.nodeapi.User
 import net.corda.nodeapi.config.parseAs
 import net.corda.testing.DUMMY_MAP
 import net.corda.testing.TestDependencyInjectionBase
+import net.corda.testing.chooseIdentity
 import net.corda.testing.driver.addressMustNotBeBoundFuture
 import net.corda.testing.getFreeLocalPorts
 import net.corda.testing.node.MockServices.Companion.MOCK_VERSION_INFO
@@ -86,7 +87,7 @@ abstract class NodeBasedTest : TestDependencyInjectionBase() {
                             advertisedServices: Set<ServiceInfo> = emptySet(),
                             rpcUsers: List<User> = emptyList(),
                             configOverrides: Map<String, Any> = emptyMap()): Node {
-        check(_networkMapNode == null || _networkMapNode!!.info.legalIdentity.name == legalName)
+        check(_networkMapNode == null || _networkMapNode!!.info.legalIdentitiesAndCerts.first().name == legalName)
         return startNodeInternal(legalName, platformVersion, advertisedServices + ServiceInfo(NetworkMapService.type), rpcUsers, configOverrides).apply {
             _networkMapNode = this
         }
@@ -105,14 +106,14 @@ abstract class NodeBasedTest : TestDependencyInjectionBase() {
             mapOf(
                     "networkMapService" to mapOf(
                             "address" to "localhost:10000",
-                            "legalName" to networkMapNode.info.legalIdentity.name.toString()
+                            "legalName" to networkMapNode.info.legalIdentitiesAndCerts.first().name.toString()
                     )
             )
         } else {
             mapOf(
                     "networkMapService" to mapOf(
                             "address" to networkMapNode.configuration.p2pAddress.toString(),
-                            "legalName" to networkMapNode.info.legalIdentity.name.toString()
+                            "legalName" to networkMapNode.info.legalIdentitiesAndCerts.first().name.toString()
                     )
             )
         }

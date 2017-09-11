@@ -21,6 +21,8 @@ import net.corda.irs.flows.FixingFlow
 import net.corda.client.jackson.JacksonSupport
 import net.corda.node.services.identity.InMemoryIdentityService
 import net.corda.testing.DUMMY_CA
+import net.corda.testing.chooseIdentity
+import net.corda.testing.chooseIdentityAndCert
 import net.corda.testing.node.InMemoryMessagingNetwork
 import rx.Observable
 import java.security.PublicKey
@@ -43,7 +45,7 @@ class IRSSimulation(networkSendManuallyPumped: Boolean, runAsync: Boolean, laten
     private val executeOnNextIteration = Collections.synchronizedList(LinkedList<() -> Unit>())
 
     override fun startMainSimulation(): CompletableFuture<Unit> {
-        om = JacksonSupport.createInMemoryMapper(InMemoryIdentityService((banks + regulators + networkMap).map { it.info.legalIdentityAndCert }, trustRoot = DUMMY_CA.certificate))
+        om = JacksonSupport.createInMemoryMapper(InMemoryIdentityService((banks + regulators + networkMap).flatMap { it.info.legalIdentitiesAndCerts }, trustRoot = DUMMY_CA.certificate))
         registerFinanceJSONMappers(om)
 
         return startIRSDealBetween(0, 1).thenCompose {
@@ -128,8 +130,8 @@ class IRSSimulation(networkSendManuallyPumped: Boolean, runAsync: Boolean, laten
         // have the convenient copy() method that'd let us make small adjustments. Instead they're partly mutable.
         // TODO: We should revisit this in post-Excalibur cleanup and fix, e.g. by introducing an interface.
         val irs = om.readValue<InterestRateSwap.State>(javaClass.classLoader.getResource("net/corda/irs/simulation/trade.json"))
-        irs.fixedLeg.fixedRatePayer = node1.info.legalIdentity
-        irs.floatingLeg.floatingRatePayer = node2.info.legalIdentity
+        irs.fixedLeg.fixedRatePayer = node1.info.chooseIdentity()
+        irs.floatingLeg.floatingRatePayer = node2.info.chooseIdentity()
 
         node1.registerInitiatedFlow(FixingFlow.Fixer::class.java)
         node2.registerInitiatedFlow(FixingFlow.Fixer::class.java)
@@ -155,7 +157,7 @@ class IRSSimulation(networkSendManuallyPumped: Boolean, runAsync: Boolean, laten
         showConsensusFor(listOf(node1, node2, regulators[0]))
 
         val instigator = StartDealFlow(
-                node2.info.legalIdentity,
+                node2.info.chooseIdentity(),
                 AutoOffer(notary.info.notaryIdentity, irs))
         val instigatorTxFuture = node1.services.startFlow(instigator).resultFuture
 

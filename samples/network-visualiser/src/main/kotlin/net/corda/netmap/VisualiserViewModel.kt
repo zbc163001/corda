@@ -12,6 +12,7 @@ import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.getX500Name
 import net.corda.core.utilities.organisation
 import net.corda.netmap.simulation.IRSSimulation
+import net.corda.testing.chooseIdentity
 import net.corda.testing.node.MockNetwork
 import org.bouncycastle.asn1.x500.X500Name
 import java.util.*
@@ -88,7 +89,7 @@ class VisualiserViewModel {
         try {
             return node.place.coordinate.project(view.mapImage.fitWidth, view.mapImage.fitHeight, 64.3209, 29.8406, -23.2031, 33.0469)
         } catch(e: Exception) {
-            throw Exception("Cannot project ${node.info.legalIdentity}", e)
+            throw Exception("Cannot project ${node.info.chooseIdentity()}", e)
         }
     }
 

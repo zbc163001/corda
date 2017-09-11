@@ -20,6 +20,7 @@ import net.corda.node.internal.CordaRPCOpsImpl
 import net.corda.node.services.FlowPermissions.Companion.startFlowPermission
 import net.corda.nodeapi.User
 import net.corda.testing.RPCDriverExposedDSLInterface
+import net.corda.testing.chooseIdentity
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyContractV2
 import net.corda.testing.node.MockNetwork
@@ -71,11 +72,11 @@ class ContractUpgradeFlowTest {
     @Test
     fun `2 parties contract upgrade`() {
         // Create dummy contract.
-        val twoPartyDummyContract = DummyContract.generateInitial(0, notary, a.info.legalIdentity.ref(1), b.info.legalIdentity.ref(1))
+        val twoPartyDummyContract = DummyContract.generateInitial(0, notary, a.info.chooseIdentity().ref(1), b.info.chooseIdentity().ref(1))
         val signedByA = a.services.signInitialTransaction(twoPartyDummyContract)
         val stx = b.services.addSignature(signedByA)
 
-        a.services.startFlow(FinalityFlow(stx, setOf(a.info.legalIdentity, b.info.legalIdentity)))
+        a.services.startFlow(FinalityFlow(stx, setOf(a.info.chooseIdentity(), b.info.chooseIdentity())))
         mockNet.runNetwork()
 
         val atx = a.database.transaction { a.services.validatedTransactions.getTransaction(stx.id) }
@@ -141,7 +142,7 @@ class ContractUpgradeFlowTest {
     fun `2 parties contract upgrade using RPC`() {
         rpcDriver(initialiseSerialization = false) {
             // Create dummy contract.
-            val twoPartyDummyContract = DummyContract.generateInitial(0, notary, a.info.legalIdentity.ref(1), b.info.legalIdentity.ref(1))
+            val twoPartyDummyContract = DummyContract.generateInitial(0, notary, a.info.chooseIdentity().ref(1), b.info.chooseIdentity().ref(1))
             val signedByA = a.services.signInitialTransaction(twoPartyDummyContract)
             val stx = b.services.addSignature(signedByA)
 
@@ -154,7 +155,7 @@ class ContractUpgradeFlowTest {
             ))
             val rpcA = startProxy(a, user)
             val rpcB = startProxy(b, user)
-            val handle = rpcA.startFlow(::FinalityInvoker, stx, setOf(a.info.legalIdentity, b.info.legalIdentity))
+            val handle = rpcA.startFlow(::FinalityInvoker, stx, setOf(a.info.chooseIdentity(), b.info.chooseIdentity()))
             mockNet.runNetwork()
             handle.returnValue.getOrThrow()
 
@@ -216,6 +217,7 @@ class ContractUpgradeFlowTest {
     @Test
     fun `upgrade Cash to v2`() {
         // Create some cash.
+        val chosenIdentity = a.info.chooseIdentity()
         val result = a.services.startFlow(CashIssueFlow(Amount(1000, USD), OpaqueBytes.of(1), notary)).resultFuture
         mockNet.runNetwork()
         val stx = result.getOrThrow().stx
@@ -229,8 +231,8 @@ class ContractUpgradeFlowTest {
         // Get contract state from the vault.
         val firstState = a.database.transaction { a.services.vaultQueryService.queryBy<ContractState>().states.single() }
         assertTrue(firstState.state.data is CashV2.State, "Contract state is upgraded to the new version.")
-        assertEquals(Amount(1000000, USD).`issued by`(a.info.legalIdentity.ref(1)), (firstState.state.data as CashV2.State).amount, "Upgraded cash contain the correct amount.")
-        assertEquals<Collection<AbstractParty>>(listOf(a.info.legalIdentity), (firstState.state.data as CashV2.State).owners, "Upgraded cash belongs to the right owner.")
+        assertEquals(Amount(1000000, USD).`issued by`(chosenIdentity.ref(1)), (firstState.state.data as CashV2.State).amount, "Upgraded cash contain the correct amount.")
+        assertEquals<Collection<AbstractParty>>(listOf(chosenIdentity), (firstState.state.data as CashV2.State).owners, "Upgraded cash belongs to the right owner.")
     }
 
     class CashV2 : UpgradedContract<Cash.State, CashV2.State> {

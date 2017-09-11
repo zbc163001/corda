@@ -18,6 +18,7 @@ import net.corda.node.services.FlowPermissions.Companion.startFlowPermission
 import net.corda.node.services.transactions.ValidatingNotaryService
 import net.corda.nodeapi.User
 import net.corda.testing.ALICE
+import net.corda.testing.chooseIdentity
 import net.corda.testing.node.NodeBasedTest
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
@@ -78,7 +79,7 @@ class CordaRPCClientTest : NodeBasedTest() {
         println("Creating proxy")
         println("Starting flow")
         val flowHandle = connection!!.proxy.startTrackedFlow(::CashIssueFlow,
-                20.DOLLARS, OpaqueBytes.of(0), node.info.legalIdentity
+                20.DOLLARS, OpaqueBytes.of(0), node.info.chooseIdentity()
         )
         println("Started flow, waiting on result")
         flowHandle.progress.subscribe {
@@ -90,7 +91,7 @@ class CordaRPCClientTest : NodeBasedTest() {
     @Test
     fun `sub-type of FlowException thrown by flow`() {
         login(rpcUser.username, rpcUser.password)
-        val handle = connection!!.proxy.startFlow(::CashPaymentFlow, 100.DOLLARS, node.info.legalIdentity)
+        val handle = connection!!.proxy.startFlow(::CashPaymentFlow, 100.DOLLARS, node.info.chooseIdentity())
         assertThatExceptionOfType(CashException::class.java).isThrownBy {
             handle.returnValue.getOrThrow()
         }
@@ -99,7 +100,7 @@ class CordaRPCClientTest : NodeBasedTest() {
     @Test
     fun `check basic flow has no progress`() {
         login(rpcUser.username, rpcUser.password)
-        connection!!.proxy.startFlow(::CashPaymentFlow, 100.DOLLARS, node.info.legalIdentity).use {
+        connection!!.proxy.startFlow(::CashPaymentFlow, 100.DOLLARS, node.info.chooseIdentity()).use {
             assertFalse(it is FlowProgressHandle<*>)
             assertTrue(it is FlowHandle<*>)
         }
@@ -113,7 +114,7 @@ class CordaRPCClientTest : NodeBasedTest() {
         assertTrue(startCash.isEmpty(), "Should not start with any cash")
 
         val flowHandle = proxy.startFlow(::CashIssueFlow,
-                123.DOLLARS, OpaqueBytes.of(0), node.info.legalIdentity
+                123.DOLLARS, OpaqueBytes.of(0), node.info.chooseIdentity()
         )
         println("Started issuing cash, waiting on result")
         flowHandle.returnValue.get()
@@ -138,7 +139,7 @@ class CordaRPCClientTest : NodeBasedTest() {
                     countShellFlows++
             }
         }
-        val nodeIdentity = node.info.legalIdentity
+        val nodeIdentity = node.info.chooseIdentity()
         node.services.startFlow(CashIssueFlow(2000.DOLLARS, OpaqueBytes.of(0), nodeIdentity), FlowInitiator.Shell).resultFuture.getOrThrow()
         proxy.startFlow(::CashIssueFlow,
                 123.DOLLARS,
