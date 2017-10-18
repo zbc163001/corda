@@ -115,11 +115,6 @@ class NodeVaultService(private val clock: Clock, private val keyManagementServic
         return update
     }
 
-    /**
-     * Configurable option for whether the vault should record observed states as well as our own.
-     */
-    val recordObserved = true
-
     override val rawUpdates: Observable<Vault.Update<ContractState>>
         get() = mutex.locked { _rawUpdatesPublisher }
 
@@ -158,16 +153,11 @@ class NodeVaultService(private val clock: Clock, private val keyManagementServic
         fun makeUpdate(tx: WireTransaction): Vault.Update<ContractState> {
             val myKeys = keyManagementService.filterMyKeys(tx.outputs.flatMap { it.data.participants.map { it.owningKey } }).toSet()
             val newStates = tx.outRefsOfType<ContractState>()
-            val ourNewStates: Set<StateAndRef<*>> = newStates.filter { isRelevant(it.state.data, myKeys) }.toHashSet()
+            val ourNewStates: Set<StateAndRef<ContractState>> = newStates.filter { isRelevant(it.state.data, myKeys) }.toHashSet()
+            val ourObservedStates: Set<StateAndRef<ContractState>> = newStates.filter { isObserved(it.state.data, myKeys) }.toHashSet()
 
             // Retrieve all unconsumed states for this transaction's inputs
             val consumedStates = loadStates(tx.inputs)
-
-            // TODO: Derived observed states
-            val observedStates: Set<StateAndRef<*>>? = if (recordObserved)
-                newStates.subtract(ourNewStates)
-            else
-                null
 
             // Is transaction irrelevant?
             if (consumedStates.isEmpty() && ourNewStates.isEmpty()) {
@@ -175,7 +165,7 @@ class NodeVaultService(private val clock: Clock, private val keyManagementServic
                 return Vault.NoUpdate
             }
 
-            return Vault.Update(consumedStates, ourNewStates, observed = observedStates)
+            return Vault.Update(consumedStates, ourNewStates, ourObservedStates)
         }
 
         val netDelta = txns.fold(Vault.NoUpdate) { netDelta, txn -> netDelta + makeUpdate(txn) }
@@ -189,20 +179,23 @@ class NodeVaultService(private val clock: Clock, private val keyManagementServic
             // input positions
             val ltx = tx.resolve(stateLoader, emptyList())
             val myKeys = keyManagementService.filterMyKeys(ltx.outputs.flatMap { it.data.participants.map { it.owningKey } })
-            val (consumedStateAndRefs, producedStates) = ltx.inputs.
-                    zip(ltx.outputs).
+            val zippedStates = ltx.inputs.zip(ltx.outputs)
+            val (consumedStateAndRefs, producedStates) = zippedStates.
                     filter { (_, output) -> isRelevant(output.data, myKeys.toSet()) }.
+                    unzip()
+            val (_, observedStates) = zippedStates.
+                    filter { (_, output) -> isObserved(output.data, myKeys.toSet()) }.
                     unzip()
 
             val producedStateAndRefs = producedStates.map { ltx.outRef<ContractState>(it.data) }
+            val observedStateAndRefs = observedStates.map { ltx.outRef<ContractState>(it.data) }
 
             if (consumedStateAndRefs.isEmpty() && producedStateAndRefs.isEmpty()) {
                 log.trace { "tx ${tx.id} was irrelevant to this vault, ignoring" }
                 return Vault.NoNotaryUpdate
             }
 
-            // TODO: Do we ever observe notary changes involving third parties?
-            return Vault.Update(consumedStateAndRefs.toHashSet(), producedStateAndRefs.toHashSet(), null, Vault.UpdateType.NOTARY_CHANGE, observed = null)
+            return Vault.Update(consumedStateAndRefs.toHashSet(), producedStateAndRefs.toHashSet(), observedStateAndRefs.toHashSet(), null, Vault.UpdateType.NOTARY_CHANGE)
         }
 
         val netDelta = txns.fold(Vault.NoNotaryUpdate) { netDelta, txn -> netDelta + makeUpdate(txn) }
@@ -389,6 +382,14 @@ class NodeVaultService(private val clock: Clock, private val keyManagementServic
             else -> state.participants.map { it.owningKey }
         }
         return keysToCheck.any { it in myKeys }
+    }
+
+    @VisibleForTesting
+    internal fun isObserved(state: ContractState, myKeys: Set<PublicKey>): Boolean {
+        return when (state) {
+            is ObservedState -> state.observers.any { it.owningKey in myKeys }
+            else -> false
+        }
     }
 
     private val sessionFactory = hibernateConfig.sessionFactoryForRegisteredSchemas
