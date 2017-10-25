@@ -107,7 +107,6 @@ data class FullNodeConfiguration(
         rpcUsers.forEach {
             require(it.username.matches("\\w+".toRegex())) { "Username ${it.username} contains invalid characters" }
         }
-        require(myLegalName.commonName == null) { "Common name must be null: $myLegalName" }
         require(minimumPlatformVersion >= 1) { "minimumPlatformVersion cannot be less than 1" }
     }
 }

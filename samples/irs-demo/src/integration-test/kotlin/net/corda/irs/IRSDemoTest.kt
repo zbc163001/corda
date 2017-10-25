@@ -25,6 +25,7 @@ import net.corda.nodeapi.User
 import net.corda.testing.*
 import net.corda.testing.driver.driver
 import net.corda.testing.http.HttpApi
+import net.corda.node.utilities.NotaryNode
 import org.apache.commons.io.IOUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -46,7 +47,7 @@ class IRSDemoTest : IntegrationTestCategory {
 
     @Test
     fun `runs IRS demo`() {
-        driver(useTestClock = true, isDebug = true) {
+        driver(useTestClock = true, isDebug = true, notaries = listOf(NotaryNode.Single(DUMMY_NOTARY.name, validating = false))) {
             val (controller, nodeA, nodeB) = listOf(
                     startNotaryNode(DUMMY_NOTARY.name, validating = false),
                     startNode(providedName = DUMMY_BANK_A.name, rpcUsers = listOf(rpcUser)),
