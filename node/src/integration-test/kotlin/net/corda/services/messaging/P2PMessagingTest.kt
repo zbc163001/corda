@@ -20,7 +20,6 @@ import net.corda.node.services.transactions.RaftValidatingNotaryService
 import net.corda.testing.*
 import net.corda.testing.node.NodeBasedTest
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Ignore
 import org.junit.Test
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -110,8 +109,8 @@ class P2PMessagingTest : NodeBasedTest() {
         crashingNodes.firstRequestReceived.await(5, TimeUnit.SECONDS)
         // Stop alice's node after we ensured that the first request was delivered and ignored.
         alice.services.networkMapCache.clearNetworkMapCache()
-
         alice.dispose()
+        Thread.sleep(1000)
         val numberOfRequestsReceived = crashingNodes.requestsReceived.get()
         assertThat(numberOfRequestsReceived).isGreaterThanOrEqualTo(1)
 
