@@ -459,7 +459,7 @@ class NodeMessagingClient(override val config: NodeConfiguration,
             p2pConsumer = null
             prevRunning
         }
-        if (running && !nodeExecutor.isOnThread) {
+        if (running) {
             // Wait for the main loop to notice the consumer has gone and finish up.
             shutdownLatch.await()
         }
