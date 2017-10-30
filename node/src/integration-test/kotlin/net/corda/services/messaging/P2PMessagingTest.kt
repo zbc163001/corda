@@ -84,7 +84,6 @@ class P2PMessagingTest : NodeBasedTest() {
     }
 
     @Test
-    @Ignore("Fails on Team City due to issues with restaring nodes.")
     fun `distributed service request retries are persisted across client node restarts`() {
         val distributedServiceNodes = startNotaryCluster(DISTRIBUTED_SERVICE_NAME, 2).getOrThrow()
         val alice = startNode(ALICE.name, configOverrides = mapOf("messageRedeliveryDelaySeconds" to 1)).getOrThrow()
