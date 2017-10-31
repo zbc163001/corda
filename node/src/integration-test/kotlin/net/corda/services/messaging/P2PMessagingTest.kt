@@ -109,24 +109,25 @@ class P2PMessagingTest : NodeBasedTest() {
         }
 
         // Wait until the first request is received
-        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX1")
         crashingNodes.firstRequestReceived.await(5, TimeUnit.SECONDS)
-        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX2")
         // Stop alice's node after we ensured that the first request was delivered and ignored.
         alice.services.networkMapCache.clearNetworkMapCache()
-        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX3")
         alice.dispose()
-        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX4")
         Thread.sleep(1000)
-        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX5")
         val numberOfRequestsReceived = crashingNodes.requestsReceived.get()
-        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX6")
         assertThat(numberOfRequestsReceived).isGreaterThanOrEqualTo(1)
 
         crashingNodes.ignoreRequests = false
 
         // Restart the node and expect a response
         val aliceRestarted = startNode(ALICE.name, waitForConnection = true, configOverrides = mapOf("messageRedeliveryDelaySeconds" to 5)).getOrThrow()
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX7")
         val response = aliceRestarted.network.onNext<Any>(dummyTopic, sessionId).getOrThrow(5.seconds)
 
         assertThat(crashingNodes.requestsReceived.get()).isGreaterThan(numberOfRequestsReceived)
