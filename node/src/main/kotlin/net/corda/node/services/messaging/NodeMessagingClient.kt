@@ -459,12 +459,12 @@ class NodeMessagingClient(override val config: NodeConfiguration,
             p2pConsumer = null
             prevRunning
         }
-        if (running) {
+        if (running && !nodeExecutor.isOnThread) {
             // Wait for the main loop to notice the consumer has gone and finish up.
             shutdownLatch.await()
         }
         // Only first caller to gets running true to protect against double stop, which seems to happen in some integration tests.
-        if (running) {
+        //if (running) {
             state.locked {
                 producer?.close()
                 producer = null
@@ -474,7 +474,7 @@ class NodeMessagingClient(override val config: NodeConfiguration,
                 sessionFactory!!.close()
                 sessionFactory = null
             }
-        }
+        //}
     }
 
     override fun send(message: Message, target: MessageRecipients, retryId: Long?, sequenceKey: Any, acknowledgementHandler: (() -> Unit)?) {

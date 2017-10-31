@@ -13,6 +13,7 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.getOrThrow
+import net.corda.core.utilities.loggerFor
 import net.corda.core.utilities.seconds
 import net.corda.node.internal.StartedNode
 import net.corda.node.services.messaging.*
@@ -82,6 +83,8 @@ class P2PMessagingTest : NodeBasedTest() {
         assertThat(response).isEqualTo(responseMessage)
     }
 
+    private val log = loggerFor<P2PMessagingTest>()
+
     @Test
     fun `distributed service request retries are persisted across client node restarts`() {
         val distributedServiceNodes = startNotaryCluster(DISTRIBUTED_SERVICE_NAME, 2).getOrThrow()
@@ -106,12 +109,18 @@ class P2PMessagingTest : NodeBasedTest() {
         }
 
         // Wait until the first request is received
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
         crashingNodes.firstRequestReceived.await(5, TimeUnit.SECONDS)
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
         // Stop alice's node after we ensured that the first request was delivered and ignored.
         alice.services.networkMapCache.clearNetworkMapCache()
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
         alice.dispose()
-        Thread.sleep(2000)
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
+        Thread.sleep(1000)
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
         val numberOfRequestsReceived = crashingNodes.requestsReceived.get()
+        log.warn("XXXXXXXXXXXXXXXXXXXXXXXXX")
         assertThat(numberOfRequestsReceived).isGreaterThanOrEqualTo(1)
 
         crashingNodes.ignoreRequests = false
