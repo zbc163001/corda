@@ -101,6 +101,7 @@ class NodeSchedulerServiceTest : SingletonSerializeAsToken() {
         val configuration = testNodeConfiguration(Paths.get("."), CordaX500Name("Alice", "London", "GB"))
         val validatedTransactions = MockTransactionStorage()
         val stateLoader = StateLoaderImpl(validatedTransactions)
+        val attachments = MockAttachmentStorage()
         database.transaction {
             services = rigorousMock<Services>().also {
                 doReturn(configuration).whenever(it).configuration
@@ -110,13 +111,13 @@ class NodeSchedulerServiceTest : SingletonSerializeAsToken() {
                 doCallRealMethod().whenever(it).signInitialTransaction(any(), any<PublicKey>())
                 doReturn(myInfo).whenever(it).myInfo
                 doReturn(kms).whenever(it).keyManagementService
-                doReturn(CordappProviderImpl(CordappLoader.createWithTestPackages(listOf("net.corda.testing.contracts")), MockAttachmentStorage())).whenever(it).cordappProvider
+                doReturn(CordappProviderImpl(CordappLoader.createWithTestPackages(listOf("net.corda.testing.contracts")), attachments)).whenever(it).cordappProvider
                 doCallRealMethod().whenever(it).recordTransactions(any<StatesToRecord>(), any())
                 doCallRealMethod().whenever(it).recordTransactions(any<Iterable<SignedTransaction>>())
                 doCallRealMethod().whenever(it).recordTransactions(any<SignedTransaction>(), anyVararg())
                 doReturn(NodeVaultService(testClock, kms, stateLoader, database.hibernateConfig)).whenever(it).vaultService
                 doReturn(this@NodeSchedulerServiceTest).whenever(it).testReference
-
+                doReturn(attachments).whenever(it).attachments
             }
             smmExecutor = AffinityExecutor.ServiceAffinityExecutor("test", 1)
             mockSMM = StateMachineManagerImpl(services, DBCheckpointStorage(), smmExecutor, database)
