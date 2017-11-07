@@ -23,31 +23,25 @@ import kotlin.reflect.KClass
 import kotlin.test.assertFailsWith
 
 class CollectSignaturesFlowTests {
-    companion object {
-        private val cordappPackages = listOf("net.corda.testing.contracts")
-    }
-
-    lateinit var mockNet: MockNetwork
-    lateinit var aliceNode: StartedNode<MockNetwork.MockNode>
-    lateinit var bobNode: StartedNode<MockNetwork.MockNode>
-    lateinit var charlieNode: StartedNode<MockNetwork.MockNode>
-    lateinit var alice: Party
-    lateinit var bob: Party
-    lateinit var charlie: Party
-    lateinit var notary: Party
+    private lateinit var mockNet: MockNetwork
+    private lateinit var aliceNode: StartedNode<MockNetwork.MockNode>
+    private lateinit var bobNode: StartedNode<MockNetwork.MockNode>
+    private lateinit var charlieNode: StartedNode<MockNetwork.MockNode>
+    private lateinit var alice: Party
+    private lateinit var bob: Party
+    private lateinit var charlie: Party
+    private lateinit var notary: Party
 
     @Before
     fun setup() {
-        mockNet = MockNetwork(cordappPackages = cordappPackages)
-        val notaryNode = mockNet.createNotaryNode()
+        mockNet = MockNetwork(cordappPackages = listOf("net.corda.testing.contracts"))
         aliceNode = mockNet.createPartyNode(ALICE.name)
         bobNode = mockNet.createPartyNode(BOB.name)
         charlieNode = mockNet.createPartyNode(CHARLIE.name)
-        mockNet.runNetwork()
         alice = aliceNode.info.singleIdentity()
         bob = bobNode.info.singleIdentity()
         charlie = charlieNode.info.singleIdentity()
-        notary = notaryNode.services.getDefaultNotary()
+        notary = mockNet.defaultNotaryIdentity
     }
 
     @After
@@ -182,7 +176,7 @@ class CollectSignaturesFlowTests {
     @Test
     fun `fails when not signed by initiator`() {
         val onePartyDummyContract = DummyContract.generateInitial(1337, notary, alice.ref(1))
-        val miniCorpServices = MockServices(cordappPackages, MINI_CORP_KEY)
+        val miniCorpServices = MockServices(listOf("net.corda.testing.contracts"), MINI_CORP_KEY)
         val ptx = miniCorpServices.signInitialTransaction(onePartyDummyContract)
         val flow = aliceNode.services.startFlow(CollectSignaturesFlow(ptx, emptySet()))
         mockNet.runNetwork()

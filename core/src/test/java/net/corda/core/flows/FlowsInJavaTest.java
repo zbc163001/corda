@@ -18,19 +18,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.fail;
 
 public class FlowsInJavaTest {
-
     private final MockNetwork mockNet = new MockNetwork();
     private StartedNode<MockNetwork.MockNode> aliceNode;
     private StartedNode<MockNetwork.MockNode> bobNode;
 
     @Before
     public void setUp() throws Exception {
-        mockNet.createNotaryNode();
         aliceNode = mockNet.createPartyNode(TestConstants.getALICE().getName());
         bobNode = mockNet.createPartyNode(TestConstants.getBOB().getName());
-        mockNet.runNetwork();
-        // Ensure registration was successful
-        aliceNode.getInternals().getNodeReadyFuture().get();
     }
 
     @After
