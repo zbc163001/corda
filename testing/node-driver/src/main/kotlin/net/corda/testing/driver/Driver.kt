@@ -338,7 +338,6 @@ fun <A> driver(
         debugPortAllocation: PortAllocation = defaultParameters.debugPortAllocation,
         systemProperties: Map<String, String> = defaultParameters.systemProperties,
         useTestClock: Boolean = defaultParameters.useTestClock,
-        initialiseSerialization: Boolean = defaultParameters.initialiseSerialization,
         startNodesInProcess: Boolean = defaultParameters.startNodesInProcess,
         waitForAllNodesToFinish: Boolean = defaultParameters.waitForNodesToFinish,
         notarySpecs: List<NotarySpec> = defaultParameters.notarySpecs,
@@ -360,7 +359,7 @@ fun <A> driver(
             ),
             coerce = { it },
             dsl = dsl,
-            initialiseSerialization = initialiseSerialization
+            initialiseSerialization = startNodesInProcess
     )
 }
 
