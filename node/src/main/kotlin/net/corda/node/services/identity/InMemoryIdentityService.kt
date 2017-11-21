@@ -3,14 +3,12 @@ package net.corda.node.services.identity
 import net.corda.core.contracts.PartyAndReference
 import net.corda.core.crypto.toStringShort
 import net.corda.core.identity.*
-import net.corda.core.internal.cert
 import net.corda.core.internal.toX509CertHolder
 import net.corda.core.node.services.IdentityService
 import net.corda.core.node.services.UnknownAnonymousPartyException
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.trace
-import org.bouncycastle.cert.X509CertificateHolder
 import java.security.InvalidAlgorithmParameterException
 import java.security.PublicKey
 import java.security.cert.*
@@ -27,10 +25,6 @@ class InMemoryIdentityService(identities: Iterable<PartyAndCertificate> = emptyS
                               confidentialIdentities: Iterable<PartyAndCertificate> = emptySet(),
                               override val trustRoot: X509Certificate,
                               vararg caCertificates: X509Certificate) : SingletonSerializeAsToken(), IdentityService {
-    constructor(wellKnownIdentities: Iterable<PartyAndCertificate> = emptySet(),
-                confidentialIdentities: Iterable<PartyAndCertificate> = emptySet(),
-                trustRoot: X509CertificateHolder) : this(wellKnownIdentities, confidentialIdentities, trustRoot.cert)
-
     companion object {
         private val log = contextLogger()
     }
@@ -63,7 +57,7 @@ class InMemoryIdentityService(identities: Iterable<PartyAndCertificate> = emptyS
             log.error("Certificate validation failed for ${identity.name} against trusted root ${trustAnchor.trustedCert.subjectX500Principal}.")
             log.error("Certificate path :")
             identity.certPath.certificates.reversed().forEachIndexed { index, certificate ->
-                val space = (0 until index).map { "   " }.joinToString("")
+                val space = (0 until index).joinToString("") { "   " }
                 log.error("$space${certificate.toX509CertHolder().subject}")
             }
             throw e
@@ -79,7 +73,7 @@ class InMemoryIdentityService(identities: Iterable<PartyAndCertificate> = emptyS
             val certificates = identity.certPath.certificates
             val idx = certificates.lastIndexOf(firstCertWithThisName)
             val certFactory = CertificateFactory.getInstance("X509")
-            val firstPath = certFactory.generateCertPath(certificates.slice(idx..certificates.size - 1))
+            val firstPath = certFactory.generateCertPath(certificates.slice(idx until certificates.size))
             verifyAndRegisterIdentity(PartyAndCertificate(firstPath))
         }
 
@@ -104,7 +98,7 @@ class InMemoryIdentityService(identities: Iterable<PartyAndCertificate> = emptyS
         val candidate = partyFromKey(party.owningKey)
         // TODO: This should be done via the network map cache, which is the authoritative source of well known identities
         return if (candidate != null) {
-            require(party.nameOrNull() == null || party.nameOrNull() == candidate.name) { "Candidate party ${candidate} does not match expected ${party}" }
+            require(party.nameOrNull() == null || party.nameOrNull() == candidate.name) { "Candidate party $candidate does not match expected $party" }
             wellKnownPartyFromX500Name(candidate.name)
         } else {
             null

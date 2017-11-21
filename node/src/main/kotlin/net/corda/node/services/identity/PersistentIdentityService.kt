@@ -4,17 +4,15 @@ import net.corda.core.contracts.PartyAndReference
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.toStringShort
 import net.corda.core.identity.*
-import net.corda.core.internal.cert
 import net.corda.core.internal.toX509CertHolder
 import net.corda.core.node.services.IdentityService
 import net.corda.core.node.services.UnknownAnonymousPartyException
 import net.corda.core.serialization.SingletonSerializeAsToken
-import net.corda.core.utilities.debug
 import net.corda.core.utilities.MAX_HASH_HEX_SIZE
 import net.corda.core.utilities.contextLogger
+import net.corda.core.utilities.debug
 import net.corda.node.utilities.AppendOnlyPersistentMap
 import net.corda.node.utilities.NODE_DATABASE_PREFIX
-import org.bouncycastle.cert.X509CertificateHolder
 import java.io.ByteArrayInputStream
 import java.security.InvalidAlgorithmParameterException
 import java.security.PublicKey
@@ -30,10 +28,6 @@ class PersistentIdentityService(identities: Iterable<PartyAndCertificate> = empt
                                 confidentialIdentities: Iterable<PartyAndCertificate> = emptySet(),
                                 override val trustRoot: X509Certificate,
                                 vararg caCertificates: X509Certificate) : SingletonSerializeAsToken(), IdentityService {
-    constructor(wellKnownIdentities: Iterable<PartyAndCertificate> = emptySet(),
-                confidentialIdentities: Iterable<PartyAndCertificate> = emptySet(),
-                trustRoot: X509CertificateHolder) : this(wellKnownIdentities, confidentialIdentities, trustRoot.cert)
-
     companion object {
         private val log = contextLogger()
         private val certFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
@@ -136,7 +130,7 @@ class PersistentIdentityService(identities: Iterable<PartyAndCertificate> = empt
             val certificates = identity.certPath.certificates
             val idx = certificates.lastIndexOf(firstCertWithThisName)
             val certFactory = CertificateFactory.getInstance("X509")
-            val firstPath = certFactory.generateCertPath(certificates.slice(idx..certificates.size - 1))
+            val firstPath = certFactory.generateCertPath(certificates.slice(idx until certificates.size))
             verifyAndRegisterIdentity(PartyAndCertificate(firstPath))
         }
 
