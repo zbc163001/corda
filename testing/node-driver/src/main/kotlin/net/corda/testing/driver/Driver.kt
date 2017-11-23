@@ -39,6 +39,7 @@ import net.corda.testing.node.MockServices.Companion.MOCK_VERSION_INFO
 import net.corda.testing.node.NotarySpec
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.apache.activemq.artemis.api.core.ActiveMQNotConnectedException
 import org.slf4j.Logger
 import rx.Observable
 import rx.observables.ConnectableObservable
@@ -624,7 +625,8 @@ class DriverDSL(
         val connectionFuture = poll(executorService, "RPC connection") {
             try {
                 client.start(config.rpcUsers[0].username, config.rpcUsers[0].password)
-            } catch (e: Exception) {
+                // Don't catch Exception or even RPCException, as there's no point retrying if the error is permanent:
+            } catch (e: ActiveMQNotConnectedException) { // TODO: CordaRPCClient should not expose implementation.
                 if (processDeathFuture.isDone) throw e
                 log.error("Exception $e, Retrying RPC connection at $rpcAddress")
                 null
