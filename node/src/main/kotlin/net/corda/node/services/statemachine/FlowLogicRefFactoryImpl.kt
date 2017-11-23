@@ -35,38 +35,26 @@ object FlowLogicRefFactoryImpl : SingletonSerializeAsToken(), FlowLogicRefFactor
     // TODO: Replace with a per app classloader/cordapp provider/cordapp loader - this will do for now
     var classloader: ClassLoader = javaClass.classLoader
 
+    /**
+     * Construct a FlowLogicRef, intended for cases where the flow logic class is available.
+     */
     override fun create(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowLogicRef {
-        if (!flowClass.isAnnotationPresent(SchedulableFlow::class.java)) {
-            throw IllegalFlowLogicException(flowClass, "because it's not a schedulable flow")
+        val flowNameAndArguments = verify(flowClass, *args)
+        return createKotlin(flowClass, flowNameAndArguments.args.toMap())
+    }
+
+    override fun create(flow: FlowLogicRefFactory.FlowNameAndArguments): FlowLogicRef {
+        val flowClass = Class.forName(flow.flowClass) as? Class<FlowLogic<*>>
+        if (flowClass == null) {
+            throw IllegalArgumentException("The class ${flow.flowClass} is not a subclass of FlowLogic.")
+        } else {
+            return createKotlin(flowClass, flow.args.toMap())
         }
-        return createForRPC(flowClass, *args)
     }
 
     fun createForRPC(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowLogicRef {
-        // TODO: This is used via RPC but it's probably better if we pass in argument names and values explicitly
-        // to avoid requiring only a single constructor.
-        val argTypes = args.map { it?.javaClass }
-        val constructor = try {
-            flowClass.kotlin.constructors.single { ctor ->
-                // Get the types of the arguments, always boxed (as that's what we get in the invocation).
-                val ctorTypes = ctor.javaConstructor!!.parameterTypes.map { Primitives.wrap(it) }
-                if (argTypes.size != ctorTypes.size)
-                    return@single false
-                for ((argType, ctorType) in argTypes.zip(ctorTypes)) {
-                    if (argType == null) continue   // Try and find a match based on the other arguments.
-                    if (!ctorType.isAssignableFrom(argType)) return@single false
-                }
-                true
-            }
-        } catch (e: IllegalArgumentException) {
-            throw IllegalFlowLogicException(flowClass, "due to ambiguous match against the constructors: $argTypes")
-        } catch (e: NoSuchElementException) {
-            throw IllegalFlowLogicException(flowClass, "due to missing constructor for arguments: $argTypes")
-        }
-
-        // Build map of args from array
-        val argsMap = args.zip(constructor.parameters).map { Pair(it.second.name!!, it.first) }.toMap()
-        return createKotlin(flowClass, argsMap)
+        val flowNameAndArguments = verifyForRPC(flowClass, *args)
+        return createKotlin(flowClass, flowNameAndArguments.args.toMap())
     }
 
     /**
@@ -137,5 +125,44 @@ object FlowLogicRefFactoryImpl : SingletonSerializeAsToken(), FlowLogicRefFactor
         } else {
             return false
         }
+    }
+
+    /**
+     * Create a verified pair of flow name and arguments, which can be included without requiring the flow class itself.
+     *
+     * For example, for states which create scheduled flows, it is useful if that state doesn't have to reference the
+     * flow object, so intermediary nodes do not have to have a copy of the flow to verify the state object.
+     */
+    override fun verify(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowLogicRefFactory.FlowNameAndArguments {
+        if (!flowClass.isAnnotationPresent(SchedulableFlow::class.java)) {
+            throw IllegalFlowLogicException(flowClass, "because it's not a schedulable flow")
+        }
+        return verifyForRPC(flowClass, *args)
+    }
+
+    fun verifyForRPC(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowLogicRefFactory.FlowNameAndArguments {
+        // TODO: This is used via RPC but it's probably better if we pass in argument names and values explicitly
+        // to avoid requiring only a single constructor.
+        val argTypes = args.map { it?.javaClass }
+        val constructor = try {
+            flowClass.kotlin.constructors.single { ctor ->
+                // Get the types of the arguments, always boxed (as that's what we get in the invocation).
+                val ctorTypes = ctor.javaConstructor!!.parameterTypes.map { Primitives.wrap(it) }
+                if (argTypes.size != ctorTypes.size)
+                    return@single false
+                for ((argType, ctorType) in argTypes.zip(ctorTypes)) {
+                    if (argType == null) continue   // Try and find a match based on the other arguments.
+                    if (!ctorType.isAssignableFrom(argType)) return@single false
+                }
+                true
+            }
+        } catch (e: IllegalArgumentException) {
+            throw IllegalFlowLogicException(flowClass, "due to ambiguous match against the constructors: $argTypes")
+        } catch (e: NoSuchElementException) {
+            throw IllegalFlowLogicException(flowClass, "due to missing constructor for arguments: $argTypes")
+        }
+
+        // Build map of args from array
+        return FlowLogicRefFactory.FlowNameAndArguments(flowClass.name, args.zip(constructor.parameters).map { Pair(it.second.name!!, it.first) })
     }
 }

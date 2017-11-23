@@ -11,6 +11,10 @@ import net.corda.core.serialization.CordaSerializable
 @DoNotImplement
 interface FlowLogicRefFactory {
     fun create(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowLogicRef
+    fun create(flow: FlowNameAndArguments): FlowLogicRef
+    fun verify(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowNameAndArguments
+
+    class FlowNameAndArguments(val flowClass: String, val args: List<Pair<String, Any?>>)
 }
 
 @CordaSerializable

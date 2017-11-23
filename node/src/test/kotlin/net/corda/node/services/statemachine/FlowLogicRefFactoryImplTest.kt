@@ -1,4 +1,4 @@
-package net.corda.node.services.events
+package net.corda.node.services.statemachine
 
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.IllegalFlowLogicException
@@ -6,7 +6,7 @@ import net.corda.node.services.statemachine.FlowLogicRefFactoryImpl
 import org.junit.Test
 import java.time.Duration
 
-class FlowLogicRefTest {
+class FlowLogicRefFactoryImplTest {
 
     data class ParamType1(val value: Int)
     data class ParamType2(val value: String)
