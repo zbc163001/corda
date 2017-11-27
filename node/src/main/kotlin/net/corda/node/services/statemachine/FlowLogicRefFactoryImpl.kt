@@ -58,7 +58,8 @@ object FlowLogicRefFactoryImpl : SingletonSerializeAsToken(), FlowLogicRefFactor
     }
 
     /**
-     * Create a [FlowLogicRef] by trying to find a Kotlin constructor that matches the given args.
+     * Create a [FlowLogicRef] by trying to find a Kotlin constructor that matches the given args. This allows for named
+     * arguments rather than being order-dependent.
      *
      * TODO: Rethink language specific naming.
      */

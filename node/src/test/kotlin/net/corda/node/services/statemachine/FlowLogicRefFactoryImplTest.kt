@@ -13,6 +13,7 @@ class FlowLogicRefFactoryImplTest {
     data class ParamType2(val value: String)
 
     @Suppress("UNUSED_PARAMETER", "unused") // Things are used via reflection.
+    @SchedulableFlow
     class KotlinFlowLogic(A: ParamType1, b: ParamType2) : FlowLogic<Unit>() {
         constructor() : this(ParamType1(1), ParamType2("2"))
 
@@ -28,10 +29,6 @@ class FlowLogicRefFactoryImplTest {
     }
 
     @SchedulableFlow
-    class SchedulableKotlinFlow(value: String): FlowLogic<Unit>() {
-        override fun call() = Unit
-    }
-
     class KotlinNoArgFlowLogic : FlowLogic<Unit>() {
         override fun call() = Unit
     }
@@ -42,7 +39,7 @@ class FlowLogicRefFactoryImplTest {
 
     @Test
     fun `create kotlin no arg`() {
-        FlowLogicRefFactoryImpl.createForRPC(KotlinNoArgFlowLogic::class.java)
+        FlowLogicRefFactoryImpl.create(KotlinNoArgFlowLogic::class.java)
     }
 
     @Test
@@ -53,7 +50,7 @@ class FlowLogicRefFactoryImplTest {
 
     @Test
     fun `create primary`() {
-        FlowLogicRefFactoryImpl.createForRPC(KotlinFlowLogic::class.java, ParamType1(1), ParamType2("Hello Jack"))
+        FlowLogicRefFactoryImpl.create(KotlinFlowLogic::class.java, ParamType1(1), ParamType2("Hello Jack"))
     }
 
     @Test
@@ -86,13 +83,13 @@ class FlowLogicRefFactoryImplTest {
 
     @Test
     fun `should verify reference`() {
-        val verified = FlowLogicRefFactoryImpl.verify(SchedulableKotlinFlow::class.java, "Hello Jack")
-        assertEquals("net.corda.node.services.statemachine.FlowLogicRefFactoryImplTest\$SchedulableKotlinFlow", verified.flowClass)
+        val verified = FlowLogicRefFactoryImpl.verify(KotlinFlowLogic::class.java, "Hello Jack")
+        assertEquals("net.corda.node.services.statemachine.FlowLogicRefFactoryImplTest\$KotlinFlowLogic", verified.flowClass)
         FlowLogicRefFactoryImpl.create(verified)
     }
 
     @Test(expected = IllegalFlowLogicException::class)
     fun `should reject with invalid parameters`() {
-        FlowLogicRefFactoryImpl.verify(SchedulableKotlinFlow::class.java, "Hello Jack", 12345)
+        FlowLogicRefFactoryImpl.verify(KotlinFlowLogic::class.java, "Hello Jack", 12345)
     }
 }
