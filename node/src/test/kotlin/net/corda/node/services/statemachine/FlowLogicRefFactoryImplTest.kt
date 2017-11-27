@@ -80,16 +80,4 @@ class FlowLogicRefFactoryImplTest {
     fun `create for non-schedulable flow logic`() {
         FlowLogicRefFactoryImpl.create(NonSchedulableFlow::class.java)
     }
-
-    @Test
-    fun `should verify reference`() {
-        val verified = FlowLogicRefFactoryImpl.verify(KotlinFlowLogic::class.java, "Hello Jack")
-        assertEquals("net.corda.node.services.statemachine.FlowLogicRefFactoryImplTest\$KotlinFlowLogic", verified.flowClass)
-        FlowLogicRefFactoryImpl.create(verified)
-    }
-
-    @Test(expected = IllegalFlowLogicException::class)
-    fun `should reject with invalid parameters`() {
-        FlowLogicRefFactoryImpl.verify(KotlinFlowLogic::class.java, "Hello Jack", 12345)
-    }
 }

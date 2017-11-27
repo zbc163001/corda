@@ -10,11 +10,16 @@ import net.corda.core.serialization.CordaSerializable
  */
 @DoNotImplement
 interface FlowLogicRefFactory {
+    /**
+     * Construct a FlowLogicRef. This is intended for cases where the calling code has the relevant class already
+     * and can provide it directly.
+     */
     fun create(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowLogicRef
-    fun create(flow: FlowNameAndArguments): FlowLogicRef
-    fun verify(flowClass: Class<out FlowLogic<*>>, vararg args: Any?): FlowNameAndArguments
-
-    class FlowNameAndArguments(val flowClass: String, val args: List<Pair<String, Any?>>)
+    /**
+     * Construct a FlowLogicRef. This is intended for cases where the calling code does not want to require the flow
+     * class on the classpath for all cases where the calling code is loaded.
+     */
+    fun create(flowClassName: String, vararg args: Any?): FlowLogicRef
 }
 
 @CordaSerializable
