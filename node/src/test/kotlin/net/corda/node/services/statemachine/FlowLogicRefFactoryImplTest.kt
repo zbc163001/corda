@@ -2,9 +2,10 @@ package net.corda.node.services.statemachine
 
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.IllegalFlowLogicException
-import net.corda.node.services.statemachine.FlowLogicRefFactoryImpl
+import net.corda.core.flows.SchedulableFlow
 import org.junit.Test
 import java.time.Duration
+import kotlin.test.assertEquals
 
 class FlowLogicRefFactoryImplTest {
 
@@ -26,6 +27,11 @@ class FlowLogicRefFactoryImplTest {
         override fun call() = Unit
     }
 
+    @SchedulableFlow
+    class SchedulableKotlinFlow(value: String): FlowLogic<Unit>() {
+        override fun call() = Unit
+    }
+
     class KotlinNoArgFlowLogic : FlowLogic<Unit>() {
         override fun call() = Unit
     }
@@ -40,7 +46,7 @@ class FlowLogicRefFactoryImplTest {
     }
 
     @Test
-    fun `create kotlin`() {
+    fun `should create kotlin types`() {
         val args = mapOf(Pair("A", ParamType1(1)), Pair("b", ParamType2("Hello Jack")))
         FlowLogicRefFactoryImpl.createKotlin(KotlinFlowLogic::class.java, args)
     }
@@ -76,5 +82,17 @@ class FlowLogicRefFactoryImplTest {
     @Test(expected = IllegalFlowLogicException::class)
     fun `create for non-schedulable flow logic`() {
         FlowLogicRefFactoryImpl.create(NonSchedulableFlow::class.java)
+    }
+
+    @Test
+    fun `should verify reference`() {
+        val verified = FlowLogicRefFactoryImpl.verify(SchedulableKotlinFlow::class.java, "Hello Jack")
+        assertEquals("net.corda.node.services.statemachine.FlowLogicRefFactoryImplTest\$SchedulableKotlinFlow", verified.flowClass)
+        FlowLogicRefFactoryImpl.create(verified)
+    }
+
+    @Test(expected = IllegalFlowLogicException::class)
+    fun `should reject with invalid parameters`() {
+        FlowLogicRefFactoryImpl.verify(SchedulableKotlinFlow::class.java, "Hello Jack", 12345)
     }
 }
