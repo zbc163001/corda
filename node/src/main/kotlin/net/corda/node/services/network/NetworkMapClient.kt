@@ -67,7 +67,7 @@ data class NetworkMapResponse(val networkMap: List<SecureHash>, val cacheMaxAge:
 
 class NetworkMapUpdater(private val networkMapCache: NetworkMapCacheInternal,
                         private val fileWatcher: NodeInfoWatcher,
-                        private val networkMapClient: NetworkMapClient?) : Closeable {
+                        private val networkMapClient: NetworkMapClient?) : AutoCloseable {
     companion object {
         private val logger = contextLogger()
         private val retryInterval = 1.minutes

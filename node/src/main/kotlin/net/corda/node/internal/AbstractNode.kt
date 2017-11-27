@@ -225,30 +225,30 @@ abstract class AbstractNode(val configuration: NodeConfiguration,
             Pair(StartedNodeImpl(this, _services, info, checkpointStorage, smm, attachments, network, database, rpcOps, flowStarter, notaryService), schedulerService)
         }
 
-        val networkMapUpdater = NetworkMapUpdater(services.networkMapCache,
+        NetworkMapUpdater(services.networkMapCache,
                 NodeInfoWatcher(configuration.baseDirectory, Duration.ofMillis(configuration.additionalNodeInfoPollingFrequencyMsec)),
-                networkMapClient)
-        runOnStop += networkMapUpdater::close
+                networkMapClient).use { networkMapUpdater ->
 
-        networkMapUpdater.updateNodeInfo(services.myInfo) {
-            val serialisedNodeInfo = it.serialize()
-            val signature = services.keyManagementService.sign(serialisedNodeInfo.bytes, it.legalIdentities.first().owningKey)
-            SignedData(serialisedNodeInfo, signature)
-        }
-        networkMapUpdater.subscribeToNetworkMap()
-
-        // If we successfully  loaded network data from database, we set this future to Unit.
-        services.networkMapCache.addNode(info)
-        _nodeReadyFuture.captureLater(services.networkMapCache.nodeReady.map { Unit })
-
-        return startedImpl.apply {
-            database.transaction {
-                smm.start(tokenizableServices)
-                // Shut down the SMM so no Fibers are scheduled.
-                runOnStop += { smm.stop(acceptableLiveFiberCountOnStop()) }
-                schedulerService.start()
+            networkMapUpdater.updateNodeInfo(services.myInfo) {
+                val serialisedNodeInfo = it.serialize()
+                val signature = services.keyManagementService.sign(serialisedNodeInfo.bytes, it.legalIdentities.first().owningKey)
+                SignedData(serialisedNodeInfo, signature)
             }
-            _started = this
+            networkMapUpdater.subscribeToNetworkMap()
+
+            // If we successfully  loaded network data from database, we set this future to Unit.
+            services.networkMapCache.addNode(info)
+            _nodeReadyFuture.captureLater(services.networkMapCache.nodeReady.map { Unit })
+
+            return startedImpl.apply {
+                database.transaction {
+                    smm.start(tokenizableServices)
+                    // Shut down the SMM so no Fibers are scheduled.
+                    runOnStop += { smm.stop(acceptableLiveFiberCountOnStop()) }
+                    schedulerService.start()
+                }
+                _started = this
+            }
         }
     }
 
