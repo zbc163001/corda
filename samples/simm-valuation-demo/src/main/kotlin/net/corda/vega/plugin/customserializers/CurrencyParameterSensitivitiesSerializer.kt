@@ -14,9 +14,6 @@ class CurrencyParameterSensitivitiesSerializer :
     @CordaCustomSerializerProxy
     data class Proxy(val sensitivities: List<CurrencyParameterSensitivity>)
 
-    override val type: Type get() = CurrencyParameterSensitivities::class.java
-    override val ptype: Type get() = Proxy::class.java
-
     override fun fromProxy(proxy: Proxy) = CurrencyParameterSensitivities.of(proxy.sensitivities)
     override fun toProxy(obj: CurrencyParameterSensitivities) = Proxy(obj.sensitivities)
 }

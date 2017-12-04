@@ -12,9 +12,6 @@ class CurrencySerializer : SerializationCustomSerializer<Currency, CurrencySeria
     @CordaCustomSerializerProxy
     data class Proxy(val currency: String)
 
-    override val type: Type get() = Currency::class.java
-    override val ptype: Type get() = Proxy::class.java
-
     override fun fromProxy(proxy: Proxy) = Currency.parse(proxy.currency)
     override fun toProxy(obj: Currency) = Proxy(obj.toString())
 }

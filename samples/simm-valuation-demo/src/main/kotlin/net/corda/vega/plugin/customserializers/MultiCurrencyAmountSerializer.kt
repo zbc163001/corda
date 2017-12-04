@@ -14,9 +14,6 @@ class MultiCurrencyAmountSerializer :
 
     override fun toProxy(obj: MultiCurrencyAmount) = Proxy(obj.toMap())
     override fun fromProxy(proxy: Proxy) = MultiCurrencyAmount.of(proxy.curencies)
-
-    override val type: Type get() = MultiCurrencyAmount::class.java
-    override val ptype: Type get() = Proxy::class.java
 }
 
 
