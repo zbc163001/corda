@@ -47,7 +47,9 @@ import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager3
+import org.bouncycastle.cert.X509CertificateHolder
 import java.lang.reflect.Method
+import java.net.URL
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
@@ -235,6 +237,8 @@ fun <A> rpcDriver(
         extraCordappPackagesToScan: List<String> = emptyList(),
         notarySpecs: List<NotarySpec> = emptyList(),
         externalTrace: Trace? = null,
+        compatibilityZoneURL: URL? = null,
+        rootCertificate: X509CertificateHolder? = null,
         dsl: RPCDriverExposedDSLInterface.() -> A
 ) = genericDriver(
         driverDsl = RPCDriverDSL(
@@ -248,7 +252,9 @@ fun <A> rpcDriver(
                         startNodesInProcess = startNodesInProcess,
                         waitForNodesToFinish = waitForNodesToFinish,
                         extraCordappPackagesToScan = extraCordappPackagesToScan,
-                        notarySpecs = notarySpecs
+                        notarySpecs = notarySpecs,
+                        compatibilityZoneURL = compatibilityZoneURL,
+                        rootCertificate = rootCertificate
                 ), externalTrace
         ),
         coerce = { it },
@@ -262,6 +268,7 @@ private class SingleUserSecurityManager(val rpcUser: User) : ActiveMQSecurityMan
     override fun validateUser(user: String?, password: String?, remotingConnection: RemotingConnection?): String? {
         return validate(user, password)
     }
+
     override fun validateUserAndRole(user: String?, password: String?, roles: MutableSet<Role>?, checkType: CheckType?, address: String?, connection: RemotingConnection?): String? {
         return validate(user, password)
     }

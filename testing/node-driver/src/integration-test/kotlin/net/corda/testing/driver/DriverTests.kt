@@ -16,6 +16,7 @@ import org.junit.Test
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
+
 class DriverTests {
     companion object {
         private val executorService: ScheduledExecutorService = Executors.newScheduledThreadPool(2)
@@ -32,6 +33,7 @@ class DriverTests {
             addressMustNotBeBound(executorService, hostAndPort)
         }
     }
+    private val portAllocation = PortAllocation.Incremental(10000)
 
     @Test
     fun `simple node startup and shutdown`() {
@@ -44,12 +46,13 @@ class DriverTests {
 
     @Test
     fun `random free port allocation`() {
-        val nodeHandle = driver(portAllocation = PortAllocation.RandomFree) {
+        val nodeHandle = driver(portAllocation = portAllocation) {
             val nodeInfo = startNode(providedName = DUMMY_BANK_A.name)
             nodeMustBeUp(nodeInfo)
         }
         nodeMustBeDown(nodeHandle)
     }
+
 
     @Test
     fun `debug mode enables debug logging level`() {
