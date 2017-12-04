@@ -2,12 +2,10 @@ package net.corda.nodeapi.internal.serialization.amqp
 
 import org.junit.Test
 import net.corda.core.serialization.CordaCustomSerializer
-import net.corda.core.serialization.CordaCustomSerializerProxy
 import net.corda.core.serialization.ClassWhitelist
 import net.corda.core.serialization.SerializationCustomSerializer
 import org.assertj.core.api.Assertions
 import java.io.NotSerializableException
-import java.lang.reflect.Type
 import kotlin.test.assertEquals
 
 class CorDappSerializerTests {
@@ -15,7 +13,6 @@ class CorDappSerializerTests {
 
     @CordaCustomSerializer
     class NeedsProxyProxySerializer : SerializationCustomSerializer<NeedsProxy, NeedsProxyProxySerializer.Proxy> {
-        @CordaCustomSerializerProxy
         data class Proxy(val proxy_a_: String)
 
         override fun fromProxy(proxy: Proxy) = NeedsProxy(proxy.proxy_a_)

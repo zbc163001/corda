@@ -6,15 +6,12 @@ import com.opengamma.strata.data.MarketDataName
 import com.opengamma.strata.collect.array.DoubleArray
 import com.opengamma.strata.basics.currency.Currency
 import net.corda.core.serialization.CordaCustomSerializer
-import net.corda.core.serialization.CordaCustomSerializerProxy
 import net.corda.core.serialization.SerializationCustomSerializer
-import java.lang.reflect.Type
 
 @CordaCustomSerializer
 @Suppress("UNUSED")
 class CurrencyParameterSensitivitySerializer :
         SerializationCustomSerializer<CurrencyParameterSensitivity, CurrencyParameterSensitivitySerializer.Proxy> {
-    @CordaCustomSerializerProxy
     data class Proxy(val currency: Currency, val marketDataName: MarketDataName<*>,
                      val parameterMetadata: List<ParameterMetadata>,
                      val sensitivity: DoubleArray)

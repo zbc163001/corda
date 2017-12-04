@@ -2,14 +2,11 @@ package net.corda.vega.plugin.customserializers
 
 import com.opengamma.strata.basics.currency.Currency
 import net.corda.core.serialization.CordaCustomSerializer
-import net.corda.core.serialization.CordaCustomSerializerProxy
 import net.corda.core.serialization.SerializationCustomSerializer
-import java.lang.reflect.Type
 
 @CordaCustomSerializer
 @Suppress("UNUSED")
 class CurrencySerializer : SerializationCustomSerializer<Currency, CurrencySerializer.Proxy> {
-    @CordaCustomSerializerProxy
     data class Proxy(val currency: String)
 
     override fun fromProxy(proxy: Proxy) = Currency.parse(proxy.currency)

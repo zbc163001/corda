@@ -79,9 +79,9 @@ class CorDappCustomSerializer(
         }
     }
 
-    override fun readObject(obj: Any, schema: Schema, input: DeserializationInput) =
+    override fun readObject(obj: Any, schemas: SerializationSchemas, input: DeserializationInput) =
             uncheckedCast<SerializationCustomSerializer<*, *>, SerializationCustomSerializer<Any?,Any?>> (
-                    serializer).fromProxy(uncheckedCast(proxySerializer.readObject(obj, schema, input)))!!
+                    serializer).fromProxy(uncheckedCast(proxySerializer.readObject(obj, schemas, input)))!!
 
     override fun isSerializerFor(clazz: Class<*>) = clazz == type
 }
