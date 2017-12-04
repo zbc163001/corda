@@ -3,11 +3,11 @@ Pluggable Serializers for CorDapps
 
 .. contents::
 
-To be serializable by Corda Java classes must be compiled with the -parameter switch to enable matching of it's properties
-to constructor parameters. This is important because Corda's internal AMQP serialization scheme will only constuct
+To be serializable by Corda Java classes must be compiled with the -parameters switch to enable matching of it's properties
+to constructor parameters. This is important because Corda's internal AMQP serialization scheme will only construct
 objects using their constructors. However, when recompilation isn't possible, or classes are built in such a way that
 they cannot be easily modified for simple serailization, CorDapps can provide custom proxy serializers that Corda
-can use to move from types it cannot serializer to an interim representation that it can with the transformation to and
+can use to move from types it cannot serialize to an interim representation that it can with the transformation to and
 from this proxy object being handled by the supplied serializer.
 
 Serializer Location
@@ -47,7 +47,7 @@ Consider this example class
     }
 
 Without a custom serializer we cannot serialize this class as there is no public constructor that facilitates the
-initialisation of al of its's properties.
+initialisation of all of its's properties.
 
 To be serializable by Corda this would require a custom serializer as follows
 
@@ -71,6 +71,6 @@ To be serializable by Corda this would require a custom serializer as follows
 Whitelisting
 ------------
 By writing a custom serializer for a class it has the effect of adding that class to the whitelist, meaning such
-classes don't need explicitly adding to the CorDapp's whitelist
+classes don't need explicitly adding to the CorDapp's whitelist.
 
 
